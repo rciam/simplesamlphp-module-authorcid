@@ -1,0 +1,16 @@
+{
+    "name": "rciam/simplesamlphp-module-authorcid",
+    "description": "A SimpleSAMLphp module for authenticating users' ORCID iDs and retrieving publicly-visible information from the ORCID registry",
+    "type": "simplesamlphp-module",
+    "keywords": ["orcid","oauth2","simplesamlphp"],
+    "license": "Apache License 2.0",
+    "authors": [
+       {
+         "name": "Nicolas Liampotis",
+         "email": "nliam@grnet.gr"
+       }
+    ],
+    "require": {
+        "simplesamlphp/composer-module-installer": "~1.0"
+    }
+}
