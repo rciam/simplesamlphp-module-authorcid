@@ -39,7 +39,7 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
     private $tokenEndpoint = 'https://orcid.org/oauth/token';
 
     // The user info endpoint
-    private $userInfoEndpoint = 'https://pub.orcid.org/v1.2';
+    private $userInfoEndpoint = 'https://pub.orcid.org/v2.1';
 
     // The ORCID Client redirect URI
     private $redirectURI;
@@ -122,6 +122,7 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
                 'redirect_uri' => $this->redirectURI,
             )
         );
+
         // Add attributes
         $orcid = $data->{'orcid'};
         $state['Attributes']['orcid.path'] = array($orcid);
@@ -139,20 +140,22 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
                 'scope' => '/read-public',
             )
         );
+
         $publicAccessToken = $data->{'access_token'};
         SimpleSAML_Logger::debug('[authorcid] finalStep: publicAccessToken=' 
             . $publicAccessToken);
 
         // Retrieve public record using access token
         $data = $this->_http('GET', $this->userInfoEndpoint . '/' . $orcid 
-            . '/orcid-profile/',
+            . '/record/',
             array(
                 'Accept: application/json',
                 'Authorization: Bearer ' . $publicAccessToken,
             )
         );
-        if (!empty($data->{'orcid-profile'}->{'orcid-identifier'})) {
-            $orcidIdentifier = $data->{'orcid-profile'}->{'orcid-identifier'};
+
+        if (!empty($data->{'orcid-identifier'})) {
+            $orcidIdentifier = $data->{'orcid-identifier'};
             if (!empty($orcidIdentifier->{'uri'})) {
                 $state['Attributes']['orcid.uri'] = 
                     array($orcidIdentifier->{'uri'});
@@ -162,31 +165,34 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
                     array($orcidIdentifier->{'host'});
             }
         }
-        if (!empty($data->{'orcid-profile'}->{'orcid-bio'}->{'personal-details'})) {
-            $personalDetails = $data->{'orcid-profile'}->{'orcid-bio'}->{'personal-details'};
-            if (!empty($personalDetails->{'given-names'}->{'value'})) {
+
+        if (!empty($data->{'person'}->{'name'})) {
+            $nameData = $data->{'person'}->{'name'};
+            if (!empty($nameData->{'given-names'}->{'value'})) {
                 $state['Attributes']['orcid.given-names'] = 
-                    array($personalDetails->{'given-names'}->{'value'});
+                    array($nameData->{'given-names'}->{'value'});
             }
-            if (!empty($personalDetails->{'family-name'}->{'value'})) {
+            if (!empty($nameData->{'family-name'}->{'value'})) {
                 $state['Attributes']['orcid.family-name'] = 
-                    array($personalDetails->{'family-name'}->{'value'});
+                    array($nameData->{'family-name'}->{'value'});
             }
-            if (!empty($personalDetails->{'credit-name'}->{'value'})) {
+            if (!empty($nameData->{'credit-name'}->{'value'})) {
                 $state['Attributes']['orcid.name'] = 
-                    array($personalDetails->{'credit-name'}->{'value'});
+                    array($nameData->{'credit-name'}->{'value'});
             }
         }
-        if (!empty($data->{'orcid-profile'}->{'orcid-bio'}->{'contact-details'}->{'email'})) {
-            $emails = $data->{'orcid-profile'}->{'orcid-bio'}->{'contact-details'}->{'email'};
+
+        if (!empty($data->{'person'}->{'emails'}->{'email'})) {
+            $emails = $data->{'person'}->{'emails'}->{'email'};
             foreach ($emails as $email) {
-                if ($email->{'primary'}) {
+                if (!empty($email->{'primary'}) && !empty($email->{'email'})) {
                     $state['Attributes']['orcid.email'] = 
-                        array($email->{'value'});
+                        array($email->{'email'});
                     break;
                 }
             }
         }
+        SimpleSAML_Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
     }
 
     private function _http($method, $url, $headers = array(), $data = null)
