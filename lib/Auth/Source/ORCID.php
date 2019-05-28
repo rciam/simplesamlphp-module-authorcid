@@ -1,5 +1,7 @@
 <?php
 
+namespace SimpleSAML\Module\authorcid\Auth\Source;
+
 /**
  * Authenticate using ORCID.
  *
@@ -21,7 +23,7 @@
  *
  * @author Nicolas Liampotis <nliam@grnet.gr>
  */
-class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
+class ORCID extends \SimpleSAML\Auth\Source {
 	
     // The string used to identify the init state.
     const STAGE_INIT = 'authorcid:init';
