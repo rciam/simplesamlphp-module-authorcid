@@ -10,17 +10,17 @@ use SimpleSAML\Auth\Source;
 if (!array_key_exists('state', $_REQUEST)) {
     throw new Exception('ORCID client state information not found');
 }
-$state = State::loadState($_REQUEST['state'], sspmod_authorcid_Auth_Source_ORCID::STAGE_INIT);
+$state = State::loadState($_REQUEST['state'], SimpleSAML\Module\authorcid\Auth\Source\ORCID::STAGE_INIT);
 
 if (array_key_exists('code', $_REQUEST)) {
-    $state[sspmod_authorcid_Auth_Source_ORCID::CODE] = $_REQUEST['code'];
+    $state[SimpleSAML\Module\authorcid\Auth\Source\ORCID::CODE] = $_REQUEST['code'];
 } else {
     throw new Exception('ORCID client authorize code not returned.');;
 }
 
 // Find authentication source
-assert('array_key_exists(sspmod_authorcid_Auth_Source_ORCID::AUTHID, $state)');
-$sourceId = $state[sspmod_authorcid_Auth_Source_ORCID::AUTHID];
+assert('array_key_exists(SimpleSAML\Module\authorcid\Auth\Source\ORCID::AUTHID, $state)');
+$sourceId = $state[SimpleSAML\Module\authorcid\Auth\Source\ORCID::AUTHID];
 
 $source = Source::getById($sourceId);
 if ($source === NULL) {
