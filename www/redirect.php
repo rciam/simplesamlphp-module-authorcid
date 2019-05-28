@@ -30,4 +30,3 @@ if ($source === NULL) {
 $source->finalStep($state);
 
 Source::completeAuth($state);
-

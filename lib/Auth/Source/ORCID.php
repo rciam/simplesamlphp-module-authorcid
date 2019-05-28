@@ -29,8 +29,9 @@ use SimpleSAML\Utilities;
  *
  * @author Nicolas Liampotis <nliam@grnet.gr>
  */
-class ORCID extends \SimpleSAML\Auth\Source {
-	
+class ORCID extends \SimpleSAML\Auth\Source
+{
+
     // The string used to identify the init state.
     const STAGE_INIT = 'authorcid:init';
 
@@ -50,7 +51,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
     private $userInfoEndpoint = 'https://pub.orcid.org/v2.1';
 
     // The ORCID Client redirect URI
-    private $redirectURI;
+    private $redirectUri;
 
     // The ORCID Client application ID
     private $clientId;
@@ -64,7 +65,8 @@ class ORCID extends \SimpleSAML\Auth\Source {
      * @param array $info  Information about this authentication source.
      * @param array $config  Configuration.
      */
-    public function __construct($info, $config) {
+    public function __construct($info, $config)
+    {
         assert('is_array($info)');
         assert('is_array($config)');
 
@@ -81,8 +83,9 @@ class ORCID extends \SimpleSAML\Auth\Source {
         }
         $this->clientSecret = $config['clientSecret'];
 
-        $this->redirectURI = Module::getModuleUrl(
-            'authorcid/redirect.php');
+        $this->redirectUri = Module::getModuleUrl(
+            'authorcid/redirect.php'
+        );
     }
 
 
@@ -92,7 +95,8 @@ class ORCID extends \SimpleSAML\Auth\Source {
      *
      * @param array &$state  Information about the current authentication.
      */
-    public function authenticate(&$state) {
+    public function authenticate(&$state)
+    {
         assert('is_array($state)');
 
         // We are going to need the authId in order to retrieve this 
@@ -100,34 +104,37 @@ class ORCID extends \SimpleSAML\Auth\Source {
         $state[self::AUTHID] = $this->authId;
 
         $stateId = State::saveState($state, self::STAGE_INIT, true);
-        $authorizeURI = $this->authorizeEndpoint
+        $authorizeUri = $this->authorizeEndpoint
             . '?client_id=' . $this->clientId
             . '&response_type=code'
             . '&scope=/authenticate'
             . '&show_login=true'
             . '&state=' . $stateId
-            . '&redirect_uri=' . $this->redirectURI;
+            . '&redirect_uri=' . $this->redirectUri;
 
         // Redirect to ORCID authorize endpoint
-        Utilities::redirect($authorizeURI);
+        Utilities::redirect($authorizeUri);
     }
 
 
-    public function finalStep(&$state) {
+    public function finalStep(&$state)
+    {
         assert('is_array($state)');
 
         $code = $state[SELF::CODE];
         Logger::debug('[authorcid] finalStep: code=' . $code);
 
         // Exchange ORCID authZ code with access token
-        $data = $this->_http('POST', $this->tokenEndpoint,
+        $data = $this->_http(
+            'POST',
+            $this->tokenEndpoint,
             array('Accept: application/json'),
             array(
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'authorization_code',
                 'code' => $code,
-                'redirect_uri' => $this->redirectURI,
+                'redirect_uri' => $this->redirectUri,
             )
         );
 
@@ -139,7 +146,9 @@ class ORCID extends \SimpleSAML\Auth\Source {
         }
 
         // Get access token for retrieving public record
-        $data = $this->_http('POST', $this->tokenEndpoint,
+        $data = $this->_http(
+            'POST',
+            $this->tokenEndpoint,
             array('Accept: application/json'),
             array(
                 'client_id' => $this->clientId,
@@ -150,12 +159,14 @@ class ORCID extends \SimpleSAML\Auth\Source {
         );
 
         $publicAccessToken = $data->{'access_token'};
-        Logger::debug('[authorcid] finalStep: publicAccessToken=' 
+        Logger::debug('[authorcid] finalStep: publicAccessToken='
             . $publicAccessToken);
 
         // Retrieve public record using access token
-        $data = $this->_http('GET', $this->userInfoEndpoint . '/' . $orcid 
-            . '/record/',
+        $data = $this->_http(
+            'GET',
+            $this->userInfoEndpoint . '/' . $orcid
+                . '/record/',
             array(
                 'Accept: application/json',
                 'Authorization: Bearer ' . $publicAccessToken,
@@ -165,11 +176,11 @@ class ORCID extends \SimpleSAML\Auth\Source {
         if (!empty($data->{'orcid-identifier'})) {
             $orcidIdentifier = $data->{'orcid-identifier'};
             if (!empty($orcidIdentifier->{'uri'})) {
-                $state['Attributes']['orcid.uri'] = 
+                $state['Attributes']['orcid.uri'] =
                     array($orcidIdentifier->{'uri'});
             }
             if (!empty($orcidIdentifier->{'host'})) {
-                $state['Attributes']['orcid.host'] = 
+                $state['Attributes']['orcid.host'] =
                     array($orcidIdentifier->{'host'});
             }
         }
@@ -177,15 +188,15 @@ class ORCID extends \SimpleSAML\Auth\Source {
         if (!empty($data->{'person'}->{'name'})) {
             $nameData = $data->{'person'}->{'name'};
             if (!empty($nameData->{'given-names'}->{'value'})) {
-                $state['Attributes']['orcid.given-names'] = 
+                $state['Attributes']['orcid.given-names'] =
                     array($nameData->{'given-names'}->{'value'});
             }
             if (!empty($nameData->{'family-name'}->{'value'})) {
-                $state['Attributes']['orcid.family-name'] = 
+                $state['Attributes']['orcid.family-name'] =
                     array($nameData->{'family-name'}->{'value'});
             }
             if (!empty($nameData->{'credit-name'}->{'value'})) {
-                $state['Attributes']['orcid.name'] = 
+                $state['Attributes']['orcid.name'] =
                     array($nameData->{'credit-name'}->{'value'});
             }
         }
@@ -194,7 +205,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
             $emails = $data->{'person'}->{'emails'}->{'email'};
             foreach ($emails as $email) {
                 if (!empty($email->{'primary'}) && !empty($email->{'email'})) {
-                    $state['Attributes']['orcid.email'] = 
+                    $state['Attributes']['orcid.email'] =
                         array($email->{'email'});
                     break;
                 }
@@ -228,8 +239,9 @@ class ORCID extends \SimpleSAML\Auth\Source {
         if ($httpResponseCode !== 200) {
             Logger::error(
                 "[authorcid] Failed to communicate with ORCID API:"
-                . " HTTP response code: " . $httpResponseCode
-                . ", error message: '" . curl_error($ch));
+                    . " HTTP response code: " . $httpResponseCode
+                    . ", error message: '" . curl_error($ch)
+            );
             throw new Exception("Failed to communicate with ORCID API");
         }
         $data = json_decode($response);
@@ -240,11 +252,11 @@ class ORCID extends \SimpleSAML\Auth\Source {
         if (isset($data->{'error-desc'})) {
             Logger::error(
                 "[authorcid] Error communicating with ORCID API:"
-                    . var_export($data->{'error-desc'}, true));
+                    . var_export($data->{'error-desc'}, true)
+            );
             throw new Exception('Error communicating with ORCID API');
         }
         curl_close($ch);
         return $data;
     }
-
 }
