@@ -21,11 +21,11 @@ use SimpleSAML\Utilities;
  *
  * Example authentication source configuration:
  *
- *     'orcid' => array(
+ *     'orcid' => [
  *         'authorcid:ORCID',
  *         'clientId' => 'APP-XXXXXXXXXXXXXXXX',
  *         'clientSecret' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
- *     ),
+ *     ],
  *
  * @author Nicolas Liampotis <nliam@grnet.gr>
  */
@@ -128,34 +128,34 @@ class ORCID extends \SimpleSAML\Auth\Source
         $data = $this->_http(
             'POST',
             $this->tokenEndpoint,
-            array('Accept: application/json'),
-            array(
+            ['Accept: application/json'],
+            [
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'authorization_code',
                 'code' => $code,
                 'redirect_uri' => $this->redirectUri,
-            )
+            ]
         );
 
         // Add attributes
         $orcid = $data->{'orcid'};
-        $state['Attributes']['orcid.path'] = array($orcid);
+        $state['Attributes']['orcid.path'] = [$orcid];
         if (!empty($data->{'name'})) {
-            $state['Attributes']['orcid.name'] = array($data->{'name'});
+            $state['Attributes']['orcid.name'] = [$data->{'name'}];
         }
 
         // Get access token for retrieving public record
         $data = $this->_http(
             'POST',
             $this->tokenEndpoint,
-            array('Accept: application/json'),
-            array(
+            ['Accept: application/json'],
+            [
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'client_credentials',
                 'scope' => '/read-public',
-            )
+            ]
         );
 
         $publicAccessToken = $data->{'access_token'};
@@ -167,21 +167,21 @@ class ORCID extends \SimpleSAML\Auth\Source
             'GET',
             $this->userInfoEndpoint . '/' . $orcid
                 . '/record/',
-            array(
+            [
                 'Accept: application/json',
                 'Authorization: Bearer ' . $publicAccessToken,
-            )
+            ]
         );
 
         if (!empty($data->{'orcid-identifier'})) {
             $orcidIdentifier = $data->{'orcid-identifier'};
             if (!empty($orcidIdentifier->{'uri'})) {
                 $state['Attributes']['orcid.uri'] =
-                    array($orcidIdentifier->{'uri'});
+                    [$orcidIdentifier->{'uri'}];
             }
             if (!empty($orcidIdentifier->{'host'})) {
                 $state['Attributes']['orcid.host'] =
-                    array($orcidIdentifier->{'host'});
+                    [$orcidIdentifier->{'host'}];
             }
         }
 
@@ -189,15 +189,15 @@ class ORCID extends \SimpleSAML\Auth\Source
             $nameData = $data->{'person'}->{'name'};
             if (!empty($nameData->{'given-names'}->{'value'})) {
                 $state['Attributes']['orcid.given-names'] =
-                    array($nameData->{'given-names'}->{'value'});
+                    [$nameData->{'given-names'}->{'value'}];
             }
             if (!empty($nameData->{'family-name'}->{'value'})) {
                 $state['Attributes']['orcid.family-name'] =
-                    array($nameData->{'family-name'}->{'value'});
+                    [$nameData->{'family-name'}->{'value'}];
             }
             if (!empty($nameData->{'credit-name'}->{'value'})) {
                 $state['Attributes']['orcid.name'] =
-                    array($nameData->{'credit-name'}->{'value'});
+                    [$nameData->{'credit-name'}->{'value'}];
             }
         }
 
@@ -206,7 +206,7 @@ class ORCID extends \SimpleSAML\Auth\Source
             foreach ($emails as $email) {
                 if (!empty($email->{'primary'}) && !empty($email->{'email'})) {
                     $state['Attributes']['orcid.email'] =
-                        array($email->{'email'});
+                        [$email->{'email'}];
                     break;
                 }
             }
@@ -214,20 +214,20 @@ class ORCID extends \SimpleSAML\Auth\Source
         Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
     }
 
-    private function _http($method, $url, $headers = array(), $data = null)
+    private function _http($method, $url, $headers = [], $data = null)
     {
         Logger::debug("[authorcid] http: method="
             . var_export($method, true) . ", url=" . var_export($url, true)
             . ", headers=" . var_export($headers, true)
             . ", data=" . var_export($data, true));
         $ch = curl_init($url);
-        $opts = array(
+        $opts = [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
-        );
+        ];
         if (strncmp($method, 'POST', 4) === 0 && !empty($data)) {
             $opts[CURLOPT_POSTFIELDS] = http_build_query($data);
         }
