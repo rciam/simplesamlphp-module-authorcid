@@ -2,6 +2,12 @@
 
 namespace SimpleSAML\Module\authorcid\Auth\Source;
 
+use SimpleSAML\Auth\State;
+use SimpleSAML\Error\Exception;
+use SimpleSAML\Logger;
+use SimpleSAML\Module;
+use SimpleSAML\Utilities;
+
 /**
  * Authenticate using ORCID.
  *
@@ -75,7 +81,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
         }
         $this->clientSecret = $config['clientSecret'];
 
-        $this->redirectURI = SimpleSAML_Module::getModuleUrl(
+        $this->redirectURI = Module::getModuleUrl(
             'authorcid/redirect.php');
     }
 
@@ -93,7 +99,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
         // authentication source later
         $state[self::AUTHID] = $this->authId;
 
-        $stateId = SimpleSAML_Auth_State::saveState($state, self::STAGE_INIT, true);
+        $stateId = State::saveState($state, self::STAGE_INIT, true);
         $authorizeURI = $this->authorizeEndpoint
             . '?client_id=' . $this->clientId
             . '&response_type=code'
@@ -103,7 +109,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
             . '&redirect_uri=' . $this->redirectURI;
 
         // Redirect to ORCID authorize endpoint
-        SimpleSAML_Utilities::redirect($authorizeURI);
+        Utilities::redirect($authorizeURI);
     }
 
 
@@ -111,7 +117,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
         assert('is_array($state)');
 
         $code = $state[SELF::CODE];
-        SimpleSAML_Logger::debug('[authorcid] finalStep: code=' . $code);
+        Logger::debug('[authorcid] finalStep: code=' . $code);
 
         // Exchange ORCID authZ code with access token
         $data = $this->_http('POST', $this->tokenEndpoint,
@@ -144,7 +150,7 @@ class ORCID extends \SimpleSAML\Auth\Source {
         );
 
         $publicAccessToken = $data->{'access_token'};
-        SimpleSAML_Logger::debug('[authorcid] finalStep: publicAccessToken=' 
+        Logger::debug('[authorcid] finalStep: publicAccessToken=' 
             . $publicAccessToken);
 
         // Retrieve public record using access token
@@ -194,12 +200,12 @@ class ORCID extends \SimpleSAML\Auth\Source {
                 }
             }
         }
-        SimpleSAML_Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
+        Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
     }
 
     private function _http($method, $url, $headers = array(), $data = null)
     {
-        SimpleSAML_Logger::debug("[authorcid] http: method="
+        Logger::debug("[authorcid] http: method="
             . var_export($method, true) . ", url=" . var_export($url, true)
             . ", headers=" . var_export($headers, true)
             . ", data=" . var_export($data, true));
@@ -220,19 +226,19 @@ class ORCID extends \SimpleSAML\Auth\Source {
         $response = curl_exec($ch);
         $httpResponseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($httpResponseCode !== 200) {
-            SimpleSAML_Logger::error(
+            Logger::error(
                 "[authorcid] Failed to communicate with ORCID API:"
                 . " HTTP response code: " . $httpResponseCode
                 . ", error message: '" . curl_error($ch));
-            throw new SimpleSAML_Error_Exception("Failed to communicate with ORCID API");
+            throw new Exception("Failed to communicate with ORCID API");
         }
         $data = json_decode($response);
-        SimpleSAML_Logger::debug("[authorcid] http: data="
+        Logger::debug("[authorcid] http: data="
             . var_export($data, true));
         assert('json_last_error()===JSON_ERROR_NONE');
         // Check for error
         if (isset($data->{'error-desc'})) {
-            SimpleSAML_Logger::error(
+            Logger::error(
                 "[authorcid] Error communicating with ORCID API:"
                     . var_export($data->{'error-desc'}, true));
             throw new Exception('Error communicating with ORCID API');
