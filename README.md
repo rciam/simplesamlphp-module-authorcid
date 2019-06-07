@@ -48,5 +48,13 @@ $attributemap = array(
 );
 ```
 
+## Compatibility matrix
+This table matches the module version with the supported SimpleSAMLphp version.
+| Module |  SimpleSAMLphp |
+|:------:|:--------------:|
+| v1.0.0 | v1.14          |
+| v1.1.0 | v1.14          |
+| v1.2.0 | v1.17          |
+
 ## License
 Licensed under the Apache 2.0 license, for details see `LICENSE`.
