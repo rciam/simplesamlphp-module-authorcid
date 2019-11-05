@@ -182,14 +182,32 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
             }
         }
 
+        // The list of email addresses returned from the UserInfo endpoint
+        $orcidEmails = [];
+        // The primary email address returned from the UserInfo endpoint.
+        $primaryOrcidEmail = null;
         if (!empty($data->{'person'}->{'emails'}->{'email'})) {
             $emails = $data->{'person'}->{'emails'}->{'email'};
             foreach ($emails as $email) {
-                if (!empty($email->{'primary'}) && !empty($email->{'email'})) {
-                    $state['Attributes']['orcid.email'] = 
-                        array($email->{'email'});
-                    break;
+                if (!empty($email->{'email'})) {
+                    $orcidEmails[] = $email->{'email'}; 
+                    if (!empty($email->{'primary'})) {
+                        $primaryOrcidEmail = $email->{'email'};
+                    }
                 }
+            }
+        }
+        SimpleSAML_Logger::debug('[authorcid] orcidEmails=' 
+            . var_export($orcidEmails, true));
+        SimpleSAML_Logger::debug('[authorcid] primaryOrcidEmail=' 
+            . var_export($primaryOrcidEmail, true));
+        // If no email address in the response is marked as primary then we
+        // assume that the first returned address is the the primary one
+        if (!empty($orcidEmails)) {
+            if (!empty($primaryOrcidEmail)) {
+                $state['Attributes']['orcid.email'] = array($primaryOrcidEmail);  
+            } else {
+                $state['Attributes']['orcid.email'] = array(array_values($orcidEmails)[0]);
             }
         }
         SimpleSAML_Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
