@@ -32,6 +32,9 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
     // The key of the authZ code in the state.
     const CODE = 'authorcid:code';
 
+    // The ORCID API version
+    private $apiVersion = 'v2.1';
+
     // The authorization endpoint
     private $authorizeEndpoint = 'https://orcid.org/oauth/authorize';
 
@@ -39,7 +42,8 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
     private $tokenEndpoint = 'https://orcid.org/oauth/token';
 
     // The user info endpoint
-    private $userInfoEndpoint = 'https://pub.orcid.org/v2.1';
+    //private $userInfoEndpoint = 'https://pub.orcid.org/v2.1'; // Public API
+    private $userInfoEndpoint = 'https://api.orcid.org/v2.1'; // Member API
 
     // The ORCID Client redirect URI
     private $redirectURI;
@@ -95,7 +99,8 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
         $authorizeURI = $this->authorizeEndpoint
             . '?client_id=' . $this->clientId
             . '&response_type=code'
-            . '&scope=/authenticate'
+            //. '&scope=/authenticate'
+            . '&scope=/read-limited' // Member API
             . '&show_login=true'
             . '&state=' . $stateId
             . '&redirect_uri=' . $this->redirectURI;
@@ -129,28 +134,39 @@ class sspmod_authorcid_Auth_Source_ORCID extends SimpleSAML_Auth_Source {
         if (!empty($data->{'name'})) {
             $state['Attributes']['orcid.name'] = array($data->{'name'});
         }
+        //data should contain the user's access token
+        // ORCID will then return the researcher’s authenticated ORCID iD and
+        // an access token: 
+        // {"access_token":"f5af9f51-07e6-4332-8f1a-c0c11c1e3728","token_type":"bearer",
+        //"refresh_token":"f725f747-3a65-49f6-a231-3e8944ce464d","expires_in":631138518,
+        //"scope":"/read-limited","name":"Sofia Garcia","orcid":"0000-0001-2345-6789"}
+        $accessToken = null;
+        if (!empty($data->{'access_token'})) {
+            $accessToken = $data->{'access_token'};
+        }
 
         // Get access token for retrieving public record
-        $data = $this->_http('POST', $this->tokenEndpoint,
-            array('Accept: application/json'),
-            array(
-                'client_id' => $this->clientId,
-                'client_secret' => $this->clientSecret,
-                'grant_type' => 'client_credentials',
-                'scope' => '/read-public',
-            )
-        );
+        // TODO Check if this step is required for Public API 
+        //$data = $this->_http('POST', $this->tokenEndpoint,
+        //    array('Accept: application/json'),
+        //    array(
+        //        'client_id' => $this->clientId,
+        //        'client_secret' => $this->clientSecret,
+        //        'grant_type' => 'client_credentials',
+        //        'scope' => '/read-public',
+        //    )
+        //);
 
-        $publicAccessToken = $data->{'access_token'};
-        SimpleSAML_Logger::debug('[authorcid] finalStep: publicAccessToken=' 
-            . $publicAccessToken);
+        //$publicAccessToken = $data->{'access_token'};
+        SimpleSAML_Logger::debug('[authorcid] finalStep: accessToken=' 
+            . $accessToken);
 
-        // Retrieve public record using access token
+        // Retrieve ORCID record using access token
         $data = $this->_http('GET', $this->userInfoEndpoint . '/' . $orcid 
             . '/record/',
             array(
                 'Accept: application/json',
-                'Authorization: Bearer ' . $publicAccessToken,
+                'Authorization: Bearer ' . $accessToken,
             )
         );
 
