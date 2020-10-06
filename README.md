@@ -52,8 +52,8 @@ In addition to the production ORCID APIs, ORCID also offers a test environment, 
 | :------------------- | :------------ | :---------------- |
 | `authorizeEndpoint`  | `https://sandbox.orcid.org/oauth/authorize` | Public or Member |
 | `tokenEndpoint`      | `https://sandbox.orcid.org/oauth/token`     | Public or Member |
-| `userInfoEndpoint`   | 1. `https://pub.sandbox.orcid.org/v3.0` <br/> 2. `https://api.sandbox.orcid.org/v3.0` | - Public <br/> - Member |
-| `scope`   | 1. `/authenticate` <br/> 2. `/read-limited` | - Public or Member <br/> - Member |
+| `userInfoEndpoint`   | 1. `https://pub.sandbox.orcid.org/v3.0` <br/> 2. `https://api.sandbox.orcid.org/v3.0` | 1. Public <br/> 2. Member |
+| `scope`   | 1. `/authenticate` <br/> 2. `/read-limited` | 1. Public or Member <br/> 2. Member |
 
 ### Example authentication source configuration
 
@@ -109,9 +109,10 @@ $attributemap = array(
 
 The table below matches the module version with the supported SimpleSAMLphp version.
 
-| Module |  SimpleSAMLphp |
-|:------:|:--------------:|
-| v1.0   | v1.14          |
+| Module | SimpleSAMLphp |
+|:------:|:-------------:|
+| v1.0   | v1.14         |
+| v1.1   | v1.14         |
 
 ## License
 
