@@ -2,6 +2,12 @@
 
 namespace SimpleSAML\Module\authorcid\Auth\Process;
 
+use SimpleSAML\Auth\Source;
+use SimpleSAML\Auth\State;
+use SimpleSAML\Logger;
+use SimpleSAML\Module;
+use SimpleSAML\Utilities;
+
 /**
  * Authenticate using ORCID.
  *
@@ -26,22 +32,22 @@ namespace SimpleSAML\Module\authorcid\Auth\Process;
  *
  * @author Nicolas Liampotis <nliam@grnet.gr>
  */
-class ORCID extends \SimpleSAML\Auth\Source
+class ORCID extends Source
 {
     /*
      * The string used to identify the init state
      */
-    const STAGE_INIT = 'authorcid:init';
+    public const STAGE_INIT = 'authorcid:init';
 
     /*
      * The key of the AuthId field in the state
      */
-    const AUTHID = 'authorcid:AuthId';
+    public const AUTHID = 'authorcid:AuthId';
 
     /*
      * The key of the authZ code in the state
      */
-    const CODE = 'authorcid:code';
+    public const CODE = 'authorcid:code';
 
     /*
      * The ORCID Client redirect URI
@@ -109,15 +115,15 @@ class ORCID extends \SimpleSAML\Auth\Source
      * @param array $info  Information about this authentication source.
      * @param array $config  Configuration.
      */
-    public function __construct($info, $config) {
+    public function __construct($info, $config)
+    {
         assert('is_array($info)');
         assert('is_array($config)');
 
         // Call the parent constructor first, as required by the interface
         parent::__construct($info, $config);
 
-        $this->redirectUri = SimpleSAML\Module::getModuleUrl(
-            'authorcid/redirect.php');
+        $this->redirectUri = Module::getModuleUrl('authorcid/redirect.php');
 
         if (!array_key_exists('clientId', $config)) {
             throw new Exception('ORCID authentication source is not properly configured: Missing clientId');
@@ -131,36 +137,46 @@ class ORCID extends \SimpleSAML\Auth\Source
 
         if (array_key_exists('authorizeEndpoint', $config)) {
             if (!is_string($config['authorizeEndpoint'])) {
-                SimpleSAML\Logger::error("ORCID authentication source is not properly configured: 'authorizeEndpoint' not a string literal");
+                Logger::error(
+                    "ORCID authentication source is not properly configured: 'authorizeEndpoint' not a string literal"
+                );
                 throw new Exception(
-                    "ORCID authentication source is not properly configured: 'authorizeEndpoint' not a string literal");
+                    "ORCID authentication source is not properly configured: 'authorizeEndpoint' not a string literal"
+                );
             }
             $this->authorizeEndpoint = $config['authorizeEndpoint'];
         }
 
         if (array_key_exists('tokenEndpoint', $config)) {
             if (!is_string($config['tokenEndpoint'])) {
-                SimpleSAML\Logger::error("ORCID authentication source is not properly configured: 'tokenEndpoint' not a string literal");
+                Logger::error(
+                    "ORCID authentication source is not properly configured: 'tokenEndpoint' not a string literal"
+                );
                 throw new Exception(
-                    "ORCID authentication source is not properly configured: 'tokenEndpoint' not a string literal");
+                    "ORCID authentication source is not properly configured: 'tokenEndpoint' not a string literal"
+                );
             }
             $this->tokenEndpoint = $config['tokenEndpoint'];
         }
 
         if (array_key_exists('userInfoEndpoint', $config)) {
             if (!is_string($config['userInfoEndpoint'])) {
-                SimpleSAML\Logger::error("ORCID authentication source is not properly configured: 'userInfoEndpoint' not a string literal");
+                Logger::error(
+                    "ORCID authentication source is not properly configured: 'userInfoEndpoint' not a string literal"
+                );
                 throw new Exception(
-                    "ORCID authentication source is not properly configured: 'userInfoEndpoint' not a string literal");
+                    "ORCID authentication source is not properly configured: 'userInfoEndpoint' not a string literal"
+                );
             }
             $this->userInfoEndpoint = $config['userInfoEndpoint'];
         }
 
         if (array_key_exists('scope', $config)) {
             if (!is_string($config['scope'])) {
-                SimpleSAML\Logger::error("ORCID authentication source is not properly configured: 'scope' not a string literal");
+                Logger::error("ORCID authentication source is not properly configured: 'scope' not a string literal");
                 throw new Exception(
-                    "ORCID authentication source is not properly configured: 'scope' not a string literal");
+                    "ORCID authentication source is not properly configured: 'scope' not a string literal"
+                );
             }
             $this->scope = $config['scope'];
         }
@@ -173,14 +189,15 @@ class ORCID extends \SimpleSAML\Auth\Source
      *
      * @param array &$state  Information about the current authentication.
      */
-    public function authenticate(&$state) {
+    public function authenticate(&$state)
+    {
         assert('is_array($state)');
 
-        // We are going to need the authId in order to retrieve this 
+        // We are going to need the authId in order to retrieve this
         // authentication source later
         $state[self::AUTHID] = $this->authId;
 
-        $stateId = SimpleSAML\Auth\State::saveState($state, self::STAGE_INIT, true);
+        $stateId = State::saveState($state, self::STAGE_INIT, true);
         $authorizeUri = $this->authorizeEndpoint
             . '?client_id=' . $this->clientId
             . '&response_type=code'
@@ -190,18 +207,21 @@ class ORCID extends \SimpleSAML\Auth\Source
             . '&redirect_uri=' . $this->redirectUri;
 
         // Redirect to ORCID authorize endpoint
-        SimpleSAML\Utilities::redirect($authorizeUri);
+        Utilities::redirect($authorizeUri);
     }
 
 
-    public function finalStep(&$state) {
+    public function finalStep(&$state)
+    {
         assert('is_array($state)');
 
-        $code = $state[SELF::CODE];
-        SimpleSAML\Logger::debug('[authorcid] finalStep: code=' . $code);
+        $code = $state[self::CODE];
+        Logger::debug('[authorcid] finalStep: code=' . $code);
 
         // Exchange ORCID authZ code with access token
-        $data = $this->_http('POST', $this->tokenEndpoint,
+        $data = $this->http(
+            'POST',
+            $this->tokenEndpoint,
             array('Accept: application/json'),
             array(
                 'client_id' => $this->clientId,
@@ -223,11 +243,11 @@ class ORCID extends \SimpleSAML\Auth\Source
         if (!empty($data->{'access_token'})) {
             $accessToken = $data->{'access_token'};
         }
-        SimpleSAML\Logger::debug('[authorcid] finalStep: accessToken='
-            . $accessToken);
+        Logger::debug('[authorcid] finalStep: accessToken=' . $accessToken);
 
         // Retrieve ORCID record using access token
-        $data = $this->_http('GET',
+        $data = $this->http(
+            'GET',
             $this->userInfoEndpoint . '/' . $orcid . '/record',
             array(
                 'Accept: application/json',
@@ -238,28 +258,23 @@ class ORCID extends \SimpleSAML\Auth\Source
         if (!empty($data->{'orcid-identifier'})) {
             $orcidIdentifier = $data->{'orcid-identifier'};
             if (!empty($orcidIdentifier->{'uri'})) {
-                $state['Attributes']['orcid.uri'] = 
-                    array($orcidIdentifier->{'uri'});
+                $state['Attributes']['orcid.uri'] = array($orcidIdentifier->{'uri'});
             }
             if (!empty($orcidIdentifier->{'host'})) {
-                $state['Attributes']['orcid.host'] = 
-                    array($orcidIdentifier->{'host'});
+                $state['Attributes']['orcid.host'] = array($orcidIdentifier->{'host'});
             }
         }
 
         if (!empty($data->{'person'}->{'name'})) {
             $nameData = $data->{'person'}->{'name'};
             if (!empty($nameData->{'given-names'}->{'value'})) {
-                $state['Attributes']['orcid.given-names'] = 
-                    array($nameData->{'given-names'}->{'value'});
+                $state['Attributes']['orcid.given-names'] = array($nameData->{'given-names'}->{'value'});
             }
             if (!empty($nameData->{'family-name'}->{'value'})) {
-                $state['Attributes']['orcid.family-name'] = 
-                    array($nameData->{'family-name'}->{'value'});
+                $state['Attributes']['orcid.family-name'] = array($nameData->{'family-name'}->{'value'});
             }
             if (!empty($nameData->{'credit-name'}->{'value'})) {
-                $state['Attributes']['orcid.name'] = 
-                    array($nameData->{'credit-name'}->{'value'});
+                $state['Attributes']['orcid.name'] = array($nameData->{'credit-name'}->{'value'});
             }
         }
 
@@ -284,17 +299,14 @@ class ORCID extends \SimpleSAML\Auth\Source
                 }
             }
         }
-        SimpleSAML\Logger::debug('[authorcid] orcidEmails='
-            . var_export($orcidEmails, true));
-        SimpleSAML\Logger::debug('[authorcid] verifiedOrcidEmails='
-            . var_export($verifiedOrcidEmails, true));
-        SimpleSAML\Logger::debug('[authorcid] primaryOrcidEmail='
-            . var_export($primaryOrcidEmail, true));
+        Logger::debug('[authorcid] orcidEmails=' . var_export($orcidEmails, true));
+        Logger::debug('[authorcid] verifiedOrcidEmails=' . var_export($verifiedOrcidEmails, true));
+        Logger::debug('[authorcid] primaryOrcidEmail=' . var_export($primaryOrcidEmail, true));
         // If no email address in the response is marked as primary then we
         // assume that the first returned address is the primary one
         if (!empty($orcidEmails)) {
             if (!empty($primaryOrcidEmail)) {
-                $state['Attributes']['orcid.email'] = array($primaryOrcidEmail);  
+                $state['Attributes']['orcid.email'] = array($primaryOrcidEmail);
             } else {
                 $state['Attributes']['orcid.email'] = array(array_values($orcidEmails)[0]);
             }
@@ -303,15 +315,17 @@ class ORCID extends \SimpleSAML\Auth\Source
             $state['Attributes']['orcid.verified-emails'] = $verifiedOrcidEmails;
         }
 
-        SimpleSAML\Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
+        Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
     }
 
-    private function _http($method, $url, $headers = array(), $data = null)
+    private function http($method, $url, $headers = array(), $data = null)
     {
-        SimpleSAML\Logger::debug("[authorcid] http: method="
-            . var_export($method, true) . ", url=" . var_export($url, true)
+        Logger::debug(
+            "[authorcid] http: method=" . var_export($method, true)
+            . ", url=" . var_export($url, true)
             . ", headers=" . var_export($headers, true)
-            . ", data=" . var_export($data, true));
+            . ", data=" . var_export($data, true)
+        );
         $ch = curl_init($url);
         $opts = array(
             CURLOPT_CUSTOMREQUEST => $method,
@@ -334,26 +348,18 @@ class ORCID extends \SimpleSAML\Auth\Source
         curl_close($ch);
 
         if (isset($errorMsg)) {
-            SimpleSAML\Logger::error(
-                "[authorcid] Failed to communicate with ORCID API:"
-                    . " HTTP Error message: '" . errorMsg);
-            throw new Exception(
-                "Failed to communicate with ORCID API:"
-                    . " HTTP Error message: '" . errorMsg);
+            Logger::error("[authorcid] Failed to communicate with ORCID API:" . " HTTP Error message: '" . $errorMsg);
+            throw new Exception("Failed to communicate with ORCID API:" . " HTTP Error message: '" . $errorMsg);
         }
         $data = json_decode($response);
-        SimpleSAML\Logger::debug("[authorcid] http: data="
-            . var_export($data, true));
+        Logger::debug("[authorcid] http: data=" . var_export($data, true));
         assert('json_last_error()===JSON_ERROR_NONE');
         // Check for ORCID API error
         if (isset($data->{'error-desc'})) {
-            SimpleSAML\Logger::error(
-                "[authorcid] Error communicating with ORCID API:"
-                    . var_export($data->{'error-desc'}, true));
+            Logger::error("[authorcid] Error communicating with ORCID API:" . var_export($data->{'error-desc'}, true));
             throw new Exception("Error communicating with ORCID API");
         }
 
         return $data;
     }
-
 }
