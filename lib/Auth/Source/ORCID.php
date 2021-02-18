@@ -47,7 +47,7 @@ class ORCID extends \SimpleSAML\Auth\Source
      * The ORCID Client redirect URI
      * @var string
      */
-    private $redirectURI;
+    private $redirectUri;
 
     /*
      * The ORCID client application ID
@@ -116,7 +116,7 @@ class ORCID extends \SimpleSAML\Auth\Source
         // Call the parent constructor first, as required by the interface
         parent::__construct($info, $config);
 
-        $this->redirectURI = SimpleSAML\Module::getModuleUrl(
+        $this->redirectUri = SimpleSAML\Module::getModuleUrl(
             'authorcid/redirect.php');
 
         if (!array_key_exists('clientId', $config)) {
@@ -181,16 +181,16 @@ class ORCID extends \SimpleSAML\Auth\Source
         $state[self::AUTHID] = $this->authId;
 
         $stateId = SimpleSAML\Auth\State::saveState($state, self::STAGE_INIT, true);
-        $authorizeURI = $this->authorizeEndpoint
+        $authorizeUri = $this->authorizeEndpoint
             . '?client_id=' . $this->clientId
             . '&response_type=code'
             . '&scope=' . $this->scope
             . '&show_login=true'
             . '&state=' . $stateId
-            . '&redirect_uri=' . $this->redirectURI;
+            . '&redirect_uri=' . $this->redirectUri;
 
         // Redirect to ORCID authorize endpoint
-        SimpleSAML\Utilities::redirect($authorizeURI);
+        SimpleSAML\Utilities::redirect($authorizeUri);
     }
 
 
@@ -208,7 +208,7 @@ class ORCID extends \SimpleSAML\Auth\Source
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'authorization_code',
                 'code' => $code,
-                'redirect_uri' => $this->redirectURI,
+                'redirect_uri' => $this->redirectUri,
             )
         );
 
