@@ -24,11 +24,11 @@ use SimpleSAML\Utilities;
  *
  * Example authentication source configuration:
  *
- *     'orcid' => array(
+ *     'orcid' => [
  *         'authorcid:ORCID',
  *         'clientId' => 'APP-XXXXXXXXXXXXXXXX',
  *         'clientSecret' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
- *     ),
+ *     ],
  *
  * @author Nicolas Liampotis <nliam@grnet.gr>
  */
@@ -222,21 +222,21 @@ class ORCID extends Source
         $data = $this->http(
             'POST',
             $this->tokenEndpoint,
-            array('Accept: application/json'),
-            array(
+            ['Accept: application/json'],
+            [
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'authorization_code',
                 'code' => $code,
                 'redirect_uri' => $this->redirectUri,
-            )
+            ]
         );
 
         // Add attributes
         $orcid = $data->{'orcid'};
-        $state['Attributes']['orcid.path'] = array($orcid);
+        $state['Attributes']['orcid.path'] = [$orcid];
         if (!empty($data->{'name'})) {
-            $state['Attributes']['orcid.name'] = array($data->{'name'});
+            $state['Attributes']['orcid.name'] = [$data->{'name'}];
         }
 
         $accessToken = null;
@@ -249,32 +249,32 @@ class ORCID extends Source
         $data = $this->http(
             'GET',
             $this->userInfoEndpoint . '/' . $orcid . '/record',
-            array(
+            [
                 'Accept: application/json',
                 'Authorization: Bearer ' . $accessToken,
-            )
+            ]
         );
 
         if (!empty($data->{'orcid-identifier'})) {
             $orcidIdentifier = $data->{'orcid-identifier'};
             if (!empty($orcidIdentifier->{'uri'})) {
-                $state['Attributes']['orcid.uri'] = array($orcidIdentifier->{'uri'});
+                $state['Attributes']['orcid.uri'] = [$orcidIdentifier->{'uri'}];
             }
             if (!empty($orcidIdentifier->{'host'})) {
-                $state['Attributes']['orcid.host'] = array($orcidIdentifier->{'host'});
+                $state['Attributes']['orcid.host'] = [$orcidIdentifier->{'host'}];
             }
         }
 
         if (!empty($data->{'person'}->{'name'})) {
             $nameData = $data->{'person'}->{'name'};
             if (!empty($nameData->{'given-names'}->{'value'})) {
-                $state['Attributes']['orcid.given-names'] = array($nameData->{'given-names'}->{'value'});
+                $state['Attributes']['orcid.given-names'] = [$nameData->{'given-names'}->{'value'}];
             }
             if (!empty($nameData->{'family-name'}->{'value'})) {
-                $state['Attributes']['orcid.family-name'] = array($nameData->{'family-name'}->{'value'});
+                $state['Attributes']['orcid.family-name'] = [$nameData->{'family-name'}->{'value'}];
             }
             if (!empty($nameData->{'credit-name'}->{'value'})) {
-                $state['Attributes']['orcid.name'] = array($nameData->{'credit-name'}->{'value'});
+                $state['Attributes']['orcid.name'] = [$nameData->{'credit-name'}->{'value'}];
             }
         }
 
@@ -306,9 +306,9 @@ class ORCID extends Source
         // assume that the first returned address is the primary one
         if (!empty($orcidEmails)) {
             if (!empty($primaryOrcidEmail)) {
-                $state['Attributes']['orcid.email'] = array($primaryOrcidEmail);
+                $state['Attributes']['orcid.email'] = [$primaryOrcidEmail];
             } else {
-                $state['Attributes']['orcid.email'] = array(array_values($orcidEmails)[0]);
+                $state['Attributes']['orcid.email'] = [array_values($orcidEmails)[0]];
             }
         }
         if (!empty($verifiedOrcidEmails)) {
@@ -318,7 +318,7 @@ class ORCID extends Source
         Logger::debug('[authorcid] attributes=' . var_export($state['Attributes'], true));
     }
 
-    private function http($method, $url, $headers = array(), $data = null)
+    private function http($method, $url, $headers = [], $data = null)
     {
         Logger::debug(
             "[authorcid] http: method=" . var_export($method, true)
@@ -327,13 +327,13 @@ class ORCID extends Source
             . ", data=" . var_export($data, true)
         );
         $ch = curl_init($url);
-        $opts = array(
+        $opts = [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
-        );
+        ];
         if (strncmp($method, 'POST', 4) === 0 && !empty($data)) {
             $opts[CURLOPT_POSTFIELDS] = http_build_query($data);
         }
