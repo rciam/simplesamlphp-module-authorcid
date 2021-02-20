@@ -111,8 +111,8 @@ The table below matches the module version with the supported SimpleSAMLphp vers
 
 | Module | SimpleSAMLphp |
 |:------:|:-------------:|
-| v1.0   | v1.14         |
-| v1.1   | v1.14         |
+| v1.x   | v1.14         |
+| v2.x   | v1.17         |
 
 ## License
 
