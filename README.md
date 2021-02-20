@@ -62,11 +62,11 @@ In addition to the production ORCID APIs, ORCID also offers a test environment, 
 Adjust the configuration below according to your Public ORCID API client credentials to retrieve a user's authenticated ORCID iD and a JSON-formatted version of their public ORCID record from the production ORCID registry.
 
 ```php
-'orcid' => array(
+'orcid' => [
     'authorcid:ORCID',
     'clientId' => 'APP-XXXXXXXXXXXXXXXX',
     'clientSecret' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-),
+],
 ```
 
 #### Member ORCID API client
@@ -74,13 +74,13 @@ Adjust the configuration below according to your Public ORCID API client credent
 Adjust the configuration below according to your Member ORCID API client credentials to retrieve a user's authenticated ORCID iD and a JSON-formatted version of their public and read-limited ORCID record from the production ORCID registry:
 
 ```php
-'orcid' => array(
+'orcid' => [
     'authorcid:ORCID',
     'clientId' => 'APP-XXXXXXXXXXXXXXXX',
     'clientSecret' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
     'scope' => '/read-limited',
     'userInfoEndpoint' => 'https://api.orcid.org/v3.0',
-),
+],
 ```
 
 ### Example attribute mapping configuration
@@ -89,7 +89,7 @@ Use the configuration below to update the user's attributes in the SimpleSAMLphp
 
 ```php
 <?php
-$attributemap = array(
+$attributemap = [
     // Attributes returned by ORCID
     'orcid.uri'             => 'eduPersonOrcid',        // URI with a 16-digit number
                                                         // compatible with ISO 27729,
@@ -102,7 +102,7 @@ $attributemap = array(
     'orcid.family-name'     => 'sn',                    // Last name
     'orcid.email'           => 'mail',                  // Primary email address
     'orcid.verified-emails' => 'voPersonVerifiedEmail', // Verified email address(es)
-);
+];
 ```
 
 ## Compatibility matrix
@@ -111,8 +111,8 @@ The table below matches the module version with the supported SimpleSAMLphp vers
 
 | Module | SimpleSAMLphp |
 |:------:|:-------------:|
-| v1.0   | v1.14         |
-| v1.1   | v1.14         |
+| v1.x   | v1.14         |
+| v2.x   | v1.17         |
 
 ## License
 
