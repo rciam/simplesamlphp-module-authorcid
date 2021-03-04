@@ -6,7 +6,7 @@
 
 use SimpleSAML\Auth\Source;
 use SimpleSAML\Auth\State;
-use SimpleSAML\Module\authorcid\Auth\Process\ORCID;
+use SimpleSAML\Module\authorcid\Auth\Source\ORCID;
 
 if (!array_key_exists('state', $_REQUEST)) {
     throw new Exception('ORCID client state information not found');
