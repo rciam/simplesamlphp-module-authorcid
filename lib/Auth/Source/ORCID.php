@@ -1,6 +1,6 @@
 <?php
 
-namespace SimpleSAML\Module\authorcid\Auth\Process;
+namespace SimpleSAML\Module\authorcid\Auth\Source;
 
 use SimpleSAML\Auth\Source;
 use SimpleSAML\Auth\State;
